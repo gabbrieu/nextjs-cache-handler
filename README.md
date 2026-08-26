@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@leejpsd/nextjs-cache-handler.svg)](https://www.npmjs.com/package/@leejpsd/nextjs-cache-handler)
 [![license](https://img.shields.io/npm/l/@leejpsd/nextjs-cache-handler.svg)](./LICENSE)
 
-> **`v0.4.2`** — install with
+> **`v1.0.0`** — install with
 > `npm install @leejpsd/nextjs-cache-handler`, or wire everything with
 > `npx nextjs-cache-handler init --yes`. Production-validated against
 > AWS ECS Fargate with multi-instance Redis (24h live-traffic soak and a
@@ -15,8 +15,9 @@
 > HIT), **pub/sub tag propagation** (~3ms cross-instance), **Redis Cluster**
 > e2e in CI, a **CLI** (`init` / `doctor` / `seed`), and agent-native assets
 > (skill, rules, [MCP server](https://www.npmjs.com/package/@leejpsd/nextjs-cache-handler-mcp)).
-> 0.4.2 aligns tag invalidation exactly with upstream semantics
-> (`updateTag()` hard vs `revalidateTag(tag, "max")` soft — see CHANGELOG).
+> 1.0 freezes the public API under semver — the eight entry points, the
+> `CacheHandlerOptions` surface, the Redis key shapes and tag-marker format,
+> and the metric event names. Upgrading from 0.4.x needs no changes.
 
 ## 🤖 For AI agents
 
@@ -431,8 +432,10 @@ ESM and CJS dual-published, full TypeScript types, validated via
     `updateTags` is hard (`updateTag()` read-your-own-writes), profile
     durations are soft with a real hard deadline; tag-stale entries are
     served with `revalidate: -1` instead of a backdated timestamp ✅
-- **v0.5** — Vercel KV / Upstash adapter, `'use cache: remote'` multi-tier
-  setup, `neshClassicCache` equivalent
+- **v1.0.0** *(2026-08)* — public API frozen under semver; every export
+  documented in [`docs/api.md`](./docs/api.md) ✅
+- **Next** — Vercel KV / Upstash adapters, `'use cache: remote'` multi-tier
+  setup, `neshClassicCache` equivalent. All additive; no 2.0 needed.
 
 ---
 

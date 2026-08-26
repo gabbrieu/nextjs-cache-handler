@@ -74,6 +74,36 @@ to the fallback path. Dropped connections are replaced automatically.
 You can also pass a **factory** returning any object satisfying
 `RedisClientLike` (see `src/types.ts`) — useful for Upstash/custom clients.
 
+## SWR helpers (`.../cache-components` and root)
+
+Exported so custom logic can reuse the same freshness rules the handler
+applies internally. Stable as of 1.0.
+
+### `partitionEntry(entry, now?)`
+
+Classifies an entry by age against its own `revalidate` / `expire` window.
+`entry` needs only `{ timestamp, revalidate, expire }`.
+
+Returns `{ freshness: "fresh" | "stale" | "expired", ageMs }`:
+
+- `fresh` — within `revalidate`
+- `stale` — past `revalidate`, still within `expire` (serve and refresh)
+- `expired` — past `expire` (do not serve)
+
+`expire: 0` is treated as the never-expire sentinel, and `expire` is clamped
+up to `revalidate` when a profile declares it smaller.
+
+### `shouldServeStale(result, staleWhileRevalidate)`
+
+`true` when a `partitionEntry` result should still be served. Honors the
+`staleWhileRevalidate` option, which governs **time-based** staleness only —
+tag invalidation is decided by the upstream contract, not this option.
+
+### `IncrementalRedisCacheHandler`
+
+The class produced by `createIncrementalCacheHandler`. Exported for type
+positions; construct it through the factory rather than directly.
+
 ## Metric events (`MetricEventType`)
 
 `cache.hit` · `cache.miss` · `cache.get.deduped` · `cache.stale` ·
