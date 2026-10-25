@@ -1,3 +1,7 @@
+> **gabbrieu fork scope:** contains the reviewed confirmation/readiness patch for the singular `cacheHandler` / `/incremental` path only. The inherited plural implementation is not qualified here; the accompanying evaluation uses flefebvre for Cache Components. See [FORK_NOTES.md](FORK_NOTES.md) for source identity, reused validation and limits.
+>
+> No fork package release has been published. Upstream package metadata, CLI imports, badges and documentation below are retained from upstream and must not be interpreted as a qualified fork distribution or fork CI result.
+
 # @leejpsd/nextjs-cache-handler
 
 [![npm](https://img.shields.io/npm/v/@leejpsd/nextjs-cache-handler.svg)](https://www.npmjs.com/package/@leejpsd/nextjs-cache-handler)

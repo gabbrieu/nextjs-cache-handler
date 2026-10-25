@@ -1,3 +1,15 @@
+# gabbrieu fork qualification scope
+
+- This fork is maintained for the singular `cacheHandler` / `/incremental` path. Preserve the inherited module layout; `/cache-components` is not qualified for use by this fork and must not be selected or fixed without a separate request.
+- The plural provider retained in the accompanying evaluation is `@flefebvre/nextjs-redis-cache-handler@0.1.0`. Do not infer plural qualification from shared client changes or from the upstream overview below.
+- Read `FORK_NOTES.md` for the exact upstream base, patch identity, pre-fork validation and limits. Reuse unchanged proofs; validate only a real code/artifact/configuration delta. Do not claim new CI results for the repository copy.
+- There is no fork package release. The upstream package name/version, CLI/scaffolding imports and release workflow remain inherited. Do not run init/doctor/setup against an application, publish, bump versions or change a consumer application without separate authorization.
+- Preserve the original MIT notices. Keep changes minimal and avoid unrelated refactoring or introducing a cache framework/adapter.
+
+## Inherited upstream guidance
+
+The overview and recipes below describe the upstream package. Apply them only within the incremental-only scope above; they do not override the consumer project's instructions or authorize installation, runtime/infra changes or publication.
+
 # @leejpsd/nextjs-cache-handler — notes for AI agents
 
 Redis cache handler for **self-hosted** Next.js 15/16. Ships BOTH interfaces:
