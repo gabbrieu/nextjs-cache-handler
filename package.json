@@ -1,5 +1,5 @@
 {
-  "name": "@gabbrieu/nextjs-cache-handler",
+  "name": "@gabrielyncas/nextjs-cache-handler",
   "version": "2.0.0",
   "description": "Incremental Redis cache handler for self-hosted Next.js 15/16, with confirmed invalidation writes and ioredis Cluster TLS/ACL configuration.",
   "keywords": [

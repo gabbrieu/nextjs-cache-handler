@@ -11,7 +11,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"))
 const lock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
 const npmCli = process.env.npm_execpath;
 assert(npmCli, "Run through npm run verify:distribution");
-assert.equal(pkg.name, "@gabbrieu/nextjs-cache-handler");
+assert.equal(pkg.name, "@gabrielyncas/nextjs-cache-handler");
 assert.equal(pkg.version, "2.0.0");
 assert.equal(pkg.bin, undefined, "The inherited CLI is not part of this distribution");
 assert.equal(pkg.exports["./cache-components"], undefined);

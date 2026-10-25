@@ -1,4 +1,4 @@
-# @gabbrieu/nextjs-cache-handler
+# @gabrielyncas/nextjs-cache-handler
 
 Incremental Redis cache handler for self-hosted Next.js 15/16. This MIT-licensed fork contains the reviewed remote-invalidation confirmation and ioredis readiness/TLS/ACL corrections from [leejpsd/nextjs-cache-handler](https://github.com/leejpsd/nextjs-cache-handler).
 
@@ -7,7 +7,7 @@ The npm distribution is dedicated to the singular `cacheHandler` interface. The 
 ## Install
 
 ```sh
-npm install @gabbrieu/nextjs-cache-handler@2.0.0 ioredis
+npm install @gabrielyncas/nextjs-cache-handler@2.0.0 ioredis
 ```
 
 Next.js must satisfy `>=15.0.0 <17` and Node.js must satisfy `>=20.0.0`. Install either `ioredis` or `redis` for the selected client; peer dependencies are not bundled into this package. Production runtime selection and lifecycle support remain the consumer's responsibility.
@@ -17,7 +17,7 @@ Next.js must satisfy `>=15.0.0 <17` and Node.js must satisfy `>=20.0.0`. Install
 Create a CommonJS wrapper, for example `cache-incremental.cjs`:
 
 ```js
-const { createIncrementalCacheHandler } = require("@gabbrieu/nextjs-cache-handler/incremental");
+const { createIncrementalCacheHandler } = require("@gabrielyncas/nextjs-cache-handler/incremental");
 
 const release = process.env.DEPLOYMENT_VERSION;
 const redisUrl = process.env.REDIS_URL;

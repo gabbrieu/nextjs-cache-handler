@@ -1,6 +1,6 @@
 # gabbrieu incremental cache fork
 
-This repository preserves the upstream source layout, but the `@gabbrieu/nextjs-cache-handler` npm distribution is incremental-only. The plural provider retained by the accompanying evaluation is `@flefebvre/nextjs-redis-cache-handler@0.1.0`.
+This repository preserves the upstream source layout, but the `@gabrielyncas/nextjs-cache-handler` npm distribution is incremental-only. The plural provider retained by the accompanying evaluation is `@flefebvre/nextjs-redis-cache-handler@0.1.0`.
 
 - Read README.md and FORK_NOTES.md for the public surface, source identity, historical validation and limits. Root imports resolve to `/incremental`; the inherited plural, CLI, seed, MCP and automatic setup recipes are not published.
 - Keep the reviewed incremental/client algorithm unchanged unless a separately identified risk or request requires a delta. Reuse unchanged proofs and validate only new source/artifact/configuration risk. Do not claim a new full CI result from historical tests.

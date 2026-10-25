@@ -28,7 +28,7 @@ No claim is made here about managed AWS services, replica failover, durability a
 
 ## Distribution surface in 2.0.0
 
-The npm distribution has its own name, `@gabbrieu/nextjs-cache-handler`, and version `2.0.0`. Root imports resolve to `/incremental`. Only incremental caching, client helpers, metrics and package metadata are exposed. The inherited plural, CLI, seed, MCP, agent rules and setup recipes remain in the source repository but are not built or published in this package.
+The npm distribution has its own name, `@gabrielyncas/nextjs-cache-handler`, and version `2.0.0`. Root imports resolve to `/incremental`. Only incremental caching, client helpers, metrics and package metadata are exposed. The inherited plural, CLI, seed, MCP, agent rules and setup recipes remain in the source repository but are not built or published in this package.
 
 The inherited CLI's original namespace cannot accidentally wire a consumer through this distribution because no CLI binary or automatic setup payload is shipped. No consumer application is changed by installing this library. The source algorithm of the reviewed incremental/client patch is preserved.
 

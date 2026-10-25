@@ -1,4 +1,4 @@
-# @gabbrieu/nextjs-cache-handler
+# @gabrielyncas/nextjs-cache-handler
 
 ## 2.0.0 — 2026-10-25
 
