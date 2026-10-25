@@ -2,7 +2,9 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": [
     "@changesets/changelog-github",
-    { "repo": "leejpsd/nextjs-cache-handler" }
+    {
+      "repo": "gabbrieu/nextjs-cache-handler"
+    }
   ],
   "commit": false,
   "fixed": [],
@@ -11,5 +13,8 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [],
-  "privatePackages": { "version": false, "tag": false }
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }

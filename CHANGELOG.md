@@ -1,3 +1,14 @@
+# @gabbrieu/nextjs-cache-handler
+
+## 2.0.0 — 2026-10-25
+
+- Publish a separately named incremental-only fork with the reviewed remote-confirmation and ioredis readiness/TLS/ACL patch. Failed soft invalidation now rejects when remote confirmation is unavailable; this intentionally changes the upstream error contract.
+- Keep the cache algorithm and validated client patch unchanged.
+- Limit the npm surface to incremental caching and its client/metrics helpers. Root imports resolve to the incremental entry point. Inherited plural, CLI, seed, MCP, agent recipes and setup scripts are not published.
+- Preserve upstream copyright and MIT notices. Package name and major version distinguish this artifact from the upstream 1.0.0 package.
+
+## Inherited upstream history
+
 # Changelog
 
 ## 1.0.0

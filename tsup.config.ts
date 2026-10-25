@@ -2,15 +2,11 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: {
-    index: "src/index.ts",
-    "cache-components/index": "src/cache-components/index.ts",
     "incremental/index": "src/incremental/index.ts",
     "shared/client/adapter-redis": "src/shared/client/adapter-redis.ts",
     "shared/client/adapter-ioredis": "src/shared/client/adapter-ioredis.ts",
     "ops/index": "src/ops/index.ts",
     "otel/index": "src/otel/index.ts",
-    "cli/index": "src/cli/index.ts",
-    "seed/index": "src/seed/index.ts",
   },
   format: ["esm", "cjs"],
   // Inject createRequire-based shims so the runtime `require()` calls in the

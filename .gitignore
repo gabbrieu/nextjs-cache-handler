@@ -13,3 +13,5 @@ coverage/
 .turbo/
 mcp/node_modules
 mcp/dist
+
+/artifacts/

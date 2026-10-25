@@ -1,89 +1,29 @@
-name: Release
+name: Build release candidate
 
-# Two trigger modes:
-#   workflow_dispatch — manually launch a release run (recommended for
-#                       the first GHA-driven publish so we can watch logs)
-#   push:branches:main — once stable, every changeset merged into main
-#                        publishes automatically (uncomment the block
-#                        below to enable)
 on:
   workflow_dispatch:
-    inputs:
-      publish_mcp:
-        description: "Publish mcp/ (@leejpsd/nextjs-cache-handler-mcp) instead of the main package"
-        type: boolean
-        default: false
-  # push:
-  #   branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  release:
-    name: Publish via Changesets
+  package:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      id-token: write    # required for npm provenance attestation
-      pull-requests: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-
-      - name: Use Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
+          node-version: 22.18.0
           cache: npm
-          registry-url: https://registry.npmjs.org
-
-      # npm Trusted Publishing (OIDC) requires npm >= 11.5.1; Node 22 bundles 10.x.
-      - run: npm install -g npm@latest
-
-      - run: npm ci --no-audit --no-fund
-
-      # Verify gates — same set the local pre-publish hook runs.
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:unit
-      - run: npm run build
-      - run: npx publint
-      - run: npx attw --pack .
-
-      # Integration tests for the release workflow run against an
-      # ephemeral Redis 7 service container — not strictly required for a
-      # patch release, but cheap insurance.
-      - name: Spin up Redis for release-time integration check
-        run: |
-          docker run -d --name release-redis -p 6390:6379 redis:7-alpine
-          for i in {1..20}; do
-            if docker exec release-redis redis-cli ping >/dev/null 2>&1; then break; fi
-            sleep 1
-          done
-      - name: Integration tests
-        env:
-          INTEGRATION_REDIS_URL: redis://127.0.0.1:6390
-        run: npm run test:integration
-
-      - name: Publish MCP package (trusted publishing)
-        if: ${{ inputs.publish_mcp }}
-        working-directory: mcp
-        run: |
-          npm ci --no-audit --no-fund
-          npm test
-          npm publish --access public --provenance
-
-      - name: Create Release Pull Request or Publish to npm
-        if: ${{ !inputs.publish_mcp }}
-        uses: changesets/action@v1
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run verify:release
+      - uses: actions/upload-artifact@v4
         with:
-          # publish: gets called when there are no changesets left to apply.
-          #          Run the build first so dist/ is populated.
-          publish: npm run publish:changesets
-          # version:  consumes pending changesets and updates package.json,
-          #          CHANGELOG, and creates a "Version Packages" PR.
-          version: npm run version:changesets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Auth via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret.
-          NPM_CONFIG_PROVENANCE: "true"
+          name: npm-release-candidate
+          path: artifacts/
+          if-no-files-found: error
+
+# Publication is a separate maintainer operation after package verification and
+# registry scope authorization. This workflow has no npm write credential, OIDC
+# publishing permission, or inherited MCP publishing path.

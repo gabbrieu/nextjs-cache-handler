@@ -26,13 +26,17 @@ Earlier validation also covered the package's ESM/CJS/types, lint/build, package
 
 No claim is made here about managed AWS services, replica failover, durability across promotion, IAM rotation, capacity or an application's production readiness. A caller deadline does not guarantee cancellation or rollback of an operation already in flight.
 
-## Distribution status
+## Distribution surface in 2.0.0
 
-No package release has been published from this fork. `package.json` still contains the upstream package name and version; version `1.0.0` alone does not identify this patched source or the upstream registry artifact. Identify this source by commit SHA.
+The npm distribution has its own name, `@gabbrieu/nextjs-cache-handler`, and version `2.0.0`. Root imports resolve to `/incremental`. Only incremental caching, client helpers, metrics and package metadata are exposed. The inherited plural, CLI, seed, MCP, agent rules and setup recipes remain in the source repository but are not built or published in this package.
 
-A fork package release needs a separately reviewed namespace/version/registry, release workflow and CLI/scaffolding identity. The inherited CLI still generates imports of the upstream package. Do not run it against a consumer application or publish using inherited package metadata without that separate work. Upstream README badges and instructions below the fork notice are retained historical upstream documentation, not this fork's CI status or qualification.
+The inherited CLI's original namespace cannot accidentally wire a consumer through this distribution because no CLI binary or automatic setup payload is shipped. No consumer application is changed by installing this library. The source algorithm of the reviewed incremental/client patch is preserved.
 
-The soft invalidation error contract intentionally changes when confirmation fails; the existing changeset proposes a major release for the upstream package. Any fork release must document that compatibility change. Maintenance and distribution qualification remain separate from creating this source fork.
+The old lockfile had upstream root identity `0.4.0` and a root dependency on the upstream package that did not match package.json. The fork's root identity is now synchronized, the stale self-dependency is removed, and existing dependency versions/resolved URLs/integrities are preserved.
+
+Registry publication status is established by the registry version and integrity, not by a version field in Git. A source branch or locally verified tarball does not imply publication or registry authorization. Distribution validation can be run with `npm run verify:release`; publication requires an account with rights to the scope.
+
+The confirmed-invalidation patch intentionally changes the soft-error contract. The previous pending changeset is represented in the 2.0.0 changelog rather than being applied a second time. Source revision, package identity and integrity must be recorded for a release.
 
 ## License and upstream
 
