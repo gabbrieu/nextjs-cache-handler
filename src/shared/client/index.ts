@@ -78,6 +78,7 @@ export class ConnectionManager {
   private connecting: Promise<RedisClientLike | null> | null = null;
   private consecutiveFailures = 0;
   private lastFailureAt = 0;
+  private lastError: Error | null = null;
   private readonly baseCooldownMs: number;
   private readonly maxCooldownMs: number;
 
@@ -108,17 +109,22 @@ export class ConnectionManager {
 
     this.connecting = (async () => {
       disposeQuietly(stale);
+      let candidate: RedisClientLike | null = null;
       try {
-        const c = await buildClient(this.source);
+        const c = (candidate = await buildClient(this.source));
         c.on("error", (err) => this.onError(err));
         if (!c.isOpen) await c.connect();
+        if (!c.isOpen) throw new Error("Redis client did not become ready");
         this.client = c;
         this.consecutiveFailures = 0;
+        this.lastError = null;
         return c;
       } catch (err) {
+        disposeQuietly(candidate);
         this.consecutiveFailures += 1;
         this.lastFailureAt = Date.now();
-        this.onError(err as Error);
+        this.lastError = err instanceof Error ? err : new Error(String(err));
+        this.onError(this.lastError);
         return null;
       } finally {
         this.connecting = null;
@@ -128,12 +134,22 @@ export class ConnectionManager {
     return this.connecting;
   }
 
+  /** Mutations must not interpret an unavailable connection as an ACK. */
+  async getOrConnectOrThrow(): Promise<RedisClientLike> {
+    const client = await this.getOrConnect();
+    if (!client) {
+      throw this.lastError ?? new Error("Redis connection is unavailable");
+    }
+    return client;
+  }
+
   reset(): void {
     disposeQuietly(this.client);
     this.client = null;
     this.connecting = null;
     this.consecutiveFailures = 0;
     this.lastFailureAt = 0;
+    this.lastError = null;
   }
 }
 

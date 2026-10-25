@@ -128,6 +128,21 @@ describe("ConnectionManager — retry after connect failure (no permanent latch)
 });
 
 describe("ConnectionManager — dropped-connection replacement", () => {
+  it("disposes a failed candidate before retrying with a fresh client", async () => {
+    const failed = makeFakeClient();
+    const error = new Error("authentication rejected");
+    failed.connect = async () => { throw error; };
+    const good = makeFakeClient();
+    const factory = vi.fn<() => RedisClientLike>()
+      .mockReturnValueOnce(failed).mockReturnValue(good);
+    const mgr = new ConnectionManager(factory, () => {}, RETRY);
+    await expect(mgr.getOrConnectOrThrow()).rejects.toBe(error);
+    expect(failed.disposeCalls).toBe(1);
+    await expect(mgr.getOrConnectOrThrow()).rejects.toBe(error);
+    vi.advanceTimersByTime(101);
+    expect(await mgr.getOrConnectOrThrow()).toBe(good);
+  });
+
   it("builds a fresh client immediately when the current one is no longer open, and disposes the dead one", async () => {
     const first = makeFakeClient();
     const second = makeFakeClient();

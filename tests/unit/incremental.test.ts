@@ -33,6 +33,40 @@ function setup() {
   return { Handler, client };
 }
 
+describe("incremental invalidation requires remote confirmation", () => {
+  it.each([undefined, { expire: 0 }, {}])(
+    "rejects a failed connect and cooldown, then permits a confirmed retry (%j)",
+    async (durations) => {
+      const client = new MockRedisClient();
+      const error = new Error("authentication rejected");
+      vi.spyOn(client, "connect").mockRejectedValueOnce(error);
+      const Handler = createIncrementalCacheHandler({
+        client: () => client,
+        fallback: "never",
+        isBuildPhase: () => false,
+      });
+      const h = new Handler();
+      await expect(h.revalidateTag("posts", durations)).rejects.toBe(error);
+      await expect(h.revalidateTag("posts", durations)).rejects.toBe(error);
+      expect(await h.get("/missing")).toBeNull();
+      vi.advanceTimersByTime(1001);
+      await expect(h.revalidateTag("posts", durations)).resolves.toBeUndefined();
+    }
+  );
+
+  it.each([undefined, { expire: 0 }, {}])(
+    "rejects a failed marker write and permits a confirmed retry (%j)",
+    async (durations) => {
+      const { Handler, client } = setup();
+      const error = new Error("marker write rejected");
+      vi.spyOn(client, "set").mockRejectedValueOnce(error);
+      const h = new Handler();
+      await expect(h.revalidateTag("posts", durations)).rejects.toBe(error);
+      await expect(h.revalidateTag("posts", durations)).resolves.toBeUndefined();
+    }
+  );
+});
+
 describe("incremental cacheHandler — basic ISR round-trip", () => {
   it("set then get returns the stored record", async () => {
     const { Handler } = setup();

@@ -40,7 +40,7 @@ ctx contract are accepted (`ctx.cacheControl.revalidate` / `kind` and
 | `client` | `RedisClientFactory \| RedisClientConfig` | **required** | factory function or lazy config object |
 | `keyPrefix` | `string` | `"next-cache:"` / `"next-incremental:"` | multi-app Redis sharing |
 | `buildNamespace` | `string \| () => string` | `DEPLOYMENT_VERSION ?? GIT_HASH ?? NEXT_DEPLOYMENT_ID ?? "unversioned"` | per-deploy key isolation; function form defers env read |
-| `abortTimeoutMs` | `number` | `1500` | per-operation deadline; timeout ⇒ miss (reads) / ignored (writes) / thrown (hard invalidation) |
+| `abortTimeoutMs` | `number` | `1500` | per-operation deadline; timeout ⇒ miss (reads) / ignored (entry writes) / thrown (remote singular invalidation, hard or soft) |
 | `fallback` | `"auto" \| "always" \| "never"` | `"auto"` | `always` = memory only (never connect); `never` = strict, Redis failures surface as misses |
 | `memoryMaxEntries` | `number` | `1000` | LRU cap for the in-memory fallback (and its tag index) |
 | `compression` | `"gzip" \| "brotli"` | off | transparent Redis value compression (node:zlib). Reads auto-detect, so mixed fleets interoperate; < 1 KiB stored plain |
@@ -58,14 +58,23 @@ ctx contract are accepted (`ctx.cacheControl.revalidate` / `kind` and
 ```ts
 | { type: "redis";    url; password?; tls?; connectTimeout? }   // node-redis v5
 | { type: "ioredis";  url; password?; tls?; connectTimeout? }
-| { type: "cluster";  nodes: {host, port}[]; password?; tls? }  // ioredis Cluster — set hashTag: true
+| { type: "cluster";  nodes: {host, port}[]; username?; password?;
+    tls?: boolean | import("node:tls").ConnectionOptions;
+    dnsLookup?; connectTimeout?; commandTimeout?; slotsRefreshTimeout? }
+    // ioredis Cluster — set hashTag: true
 | { type: "sentinel"; sentinels: {host, port}[]; name;          // ioredis Sentinel — master discovery + failover
     password?; sentinelPassword?; tls?; connectTimeout? }
 ```
 
 `tls: true` enables TLS explicitly; `rediss://` URLs auto-enable it on the
-`redis` client type. All ioredis-family clients use lazy connect,
-`maxRetriesPerRequest: 1`, and auto-pipelining.
+`redis` client type. Clients constructed from ioredis-family configuration use
+lazy connect and auto-pipelining. A factory can also wrap an auto-connecting
+client with `adaptIoredis` or `adaptCluster`: the adapter waits for `ready`
+without calling `connect()` again. An error or a connection close/end rejects
+the wait. Its budget is the positive configured `connectTimeout`, or 10 seconds
+when absent/disabled; listeners and the timer are removed on every outcome.
+The handler's separate operation deadline still applies and does not cancel a
+connection or command already in progress.
 
 Connection management: a failed connect is retried with exponential backoff
 (1s base, doubling, capped at 30s); during the cooldown operations fast-fail
@@ -143,6 +152,29 @@ setups), `meterName`, `counterName`, `histogramName`.
 - **`instance-local:` tag prefix** (singular): entries tagged
   `instance-local:*` are stored in process memory only and never touch Redis.
 - **Error policy**: reads never throw (degrade to miss); writes are
-  best-effort; hard tag invalidation (`updateTags` with `expire: 0`, ISR
-  `revalidateTag` hard path) propagates errors so callers can retry.
+  best-effort; hard plural tag invalidation (`updateTags` with `expire: 0`) and
+  remote singular `revalidateTag` propagate errors so callers can retry. The singular handler
+  requires confirmed remote marker writes for both soft and hard invalidation,
+  including initial connection failure and reconnect cooldown. Memory markers,
+  logging and a pending retry do not confirm invalidation on other instances.
+  Explicit build/local-only paths remain local. Reads and entry writes keep
+  their existing best-effort/fallback behavior.
 - **`CacheTimeoutError`** is exported from the root for `instanceof` checks.
+
+For cluster TLS, `tls: true` keeps the existing defaults. A TLS options object
+allows a custom CA and server identity without disabling certificate checks.
+`username`, `password` and TLS options are passed to every discovered node;
+`dnsLookup` is passed to ioredis Cluster (for example, preserve managed endpoint
+hostnames with `(address, callback) => callback(null, address)`). Static ACL
+credentials are supported; this does not implement IAM credential rotation.
+For cluster clients, `connectTimeout` is only forwarded when configured, retaining
+ioredis's native default (currently 10000ms). The existing single-node/Sentinel
+configuration default remains 1500ms. `commandTimeout` and cluster
+`slotsRefreshTimeout` are optional. Handler deadlines stop waiting, but do not
+cancel an already dispatched Redis operation; a rejected call may have partially
+written markers and callers must treat the result as unconfirmed, not rolled back.
+
+The newly explicit soft-error rejection is an intentional compatibility change;
+the accompanying changeset proposes a major release for maintainer review. It
+does not relax remote confirmation or select a production release. See
+[focused regression instructions](./testing-redis-invalidation.md).

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import Redis from "ioredis";
 
 import {
   createIoredisClient,
@@ -9,6 +10,28 @@ import { buildClient } from "../../src/shared/client/index.js";
 
 // These construct real ioredis instances with lazyConnect: true — no network
 // I/O happens until connect() is called, which these tests never do.
+
+describe("cluster connection timeout compatibility", () => {
+  it.each([undefined, 2500, 0])(
+    "preserves the native default or explicit value (%s)",
+    (timeout) => {
+      const cluster = createIoredisCluster({
+        type: "cluster",
+        nodes: [{ host: "127.0.0.1", port: 7000 }],
+        ...(timeout !== undefined ? { connectTimeout: timeout } : {}),
+      });
+      const node = new Redis({ ...cluster.options.redisOptions, lazyConnect: true });
+      const native = new Redis({ lazyConnect: true });
+      try {
+        expect(node.options.connectTimeout).toBe(timeout ?? native.options.connectTimeout);
+      } finally {
+        node.disconnect();
+        native.disconnect();
+        cluster.disconnect();
+      }
+    }
+  );
+});
 
 describe("client factories — Sentinel", () => {
   it("createIoredisSentinel passes sentinel endpoints and master name through", () => {

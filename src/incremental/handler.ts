@@ -534,8 +534,7 @@ export class IncrementalRedisCacheHandler {
         "incremental.revalidateTag",
         this.state.opts.abortTimeoutMs,
         async () => {
-          const client = await this.state.conn.getOrConnect();
-          if (!client) return;
+          const client = await this.state.conn.getOrConnectOrThrow();
           await Promise.all(
             list.map((t) =>
               client.set(tagMetaKey(this.state, t), JSON.stringify(payload), {
@@ -553,8 +552,9 @@ export class IncrementalRedisCacheHandler {
       this.state.logger.warn("revalidateTag() failed", {
         message: (err as Error).message,
       });
-      // Hard expirations should propagate so callers know to retry.
-      if (payload.expired !== undefined) throw err;
+      // Both hard and soft invalidation require confirmed remote writes.
+      // Local tag state alone cannot invalidate another process's entries.
+      throw err;
     }
   }
 

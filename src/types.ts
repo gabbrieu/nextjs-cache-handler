@@ -1,4 +1,5 @@
 // Public API types. Exported from `@leejpsd/nextjs-cache-handler`.
+import type { ConnectionOptions as TlsConnectionOptions } from "node:tls";
 
 /**
  * Minimal Redis client surface used by both handlers. Adapters in
@@ -82,8 +83,23 @@ export type RedisClientConfig =
   | {
       type: "cluster";
       nodes: Array<{ host: string; port: number }>;
+      /** ACL username, applied to every discovered data node. */
+      username?: string;
       password?: string;
-      tls?: boolean;
+      /** TLS options (CA, servername, etc.) for every discovered data node. */
+      tls?: boolean | TlsConnectionOptions;
+      /** Preserve hostnames where required by managed TLS endpoints. */
+      dnsLookup?: (
+        hostname: string,
+        callback: (
+          error: NodeJS.ErrnoException | null | undefined,
+          address: string,
+          family?: number
+        ) => void
+      ) => void;
+      connectTimeout?: number;
+      commandTimeout?: number;
+      slotsRefreshTimeout?: number;
     }
   | {
       type: "sentinel";

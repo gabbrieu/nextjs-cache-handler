@@ -227,12 +227,30 @@ interface CacheHandlerOptions {
 type RedisClientConfig =
   | { type: "redis";    url: string; password?: string; tls?: boolean; connectTimeout?: number }
   | { type: "ioredis";  url: string; password?: string; tls?: boolean; connectTimeout?: number }
-  | { type: "cluster";  nodes: { host: string; port: number }[]; password?: string; tls?: boolean }
+  | { type: "cluster"; nodes: { host: string; port: number }[];
+      username?: string; password?: string;
+      tls?: boolean | import("node:tls").ConnectionOptions;
+      dnsLookup?: (host: string, callback: (error: NodeJS.ErrnoException | null | undefined,
+        address: string, family?: number) => void) => void;
+      connectTimeout?: number; commandTimeout?: number; slotsRefreshTimeout?: number }
   | { type: "sentinel"; sentinels: { host: string; port: number }[]; name: string;
       password?: string; sentinelPassword?: string; tls?: boolean; connectTimeout?: number };
 ```
 
 Full reference: [`docs/api.md`](./docs/api.md).
+
+Remote singular `revalidateTag` rejects when marker writes are not confirmed,
+including soft invalidation, initial connection failure and retry cooldown.
+Local memory state and logging are not remote acknowledgements. Entry reads and
+writes retain their existing fallback behavior; explicitly local/build-only
+operations remain local. Deadlines stop waiting, without rolling back Redis writes.
+The changeset proposes a major release for this soft-error contract change.
+
+Factories wrapping auto-connecting ioredis clients wait for readiness without
+starting a second connection. Cluster `connectTimeout` is forwarded only when
+specified, preserving the driver's native default. Optional cluster TLS objects,
+ACL username and DNS lookup support verified connections to discovered nodes.
+See [focused regression instructions](./docs/testing-redis-invalidation.md).
 
 ---
 

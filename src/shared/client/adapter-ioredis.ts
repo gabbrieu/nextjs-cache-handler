@@ -14,6 +14,44 @@ import { nodeRequire } from "../node-require.js";
 
 type AnyRedis = Redis | Cluster;
 
+/** Observe an existing attempt without starting another connection. */
+function waitForReady(client: AnyRedis, isClusterClient: boolean): Promise<void> {
+  const configuredTimeout = isClusterClient
+    ? (client as Cluster).options.redisOptions?.connectTimeout
+    : (client as Redis).options.connectTimeout;
+  // A factory may disable the driver's socket timeout. The readiness wait
+  // must still be bounded; handlers also keep their own operation deadline.
+  const timeoutMs = configuredTimeout && configuredTimeout > 0 ? configuredTimeout : 10_000;
+
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timer);
+      client.removeListener("ready", onReady);
+      client.removeListener("error", onError);
+      client.removeListener("close", onClose);
+      client.removeListener("end", onClose);
+    };
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    const onClose = () => onError(new Error("Redis connection closed before ready"));
+    const timer = setTimeout(
+      () => onError(new Error(`Redis readiness timed out after ${timeoutMs}ms`)),
+      timeoutMs
+    );
+    client.once("ready", onReady);
+    client.once("error", onError);
+    client.once("close", onClose);
+    client.once("end", onClose);
+    if (client.status === "ready") onReady();
+  });
+}
+
 function adapt(client: AnyRedis, isClusterClient = false): RedisClientLike {
   return {
     get isOpen() {
@@ -22,8 +60,11 @@ function adapt(client: AnyRedis, isClusterClient = false): RedisClientLike {
       return client.status === "ready";
     },
     connect: async () => {
-      if (client.status !== "ready" && client.status !== "connecting") {
+      if (client.status === "ready") return;
+      if (client.status === "wait" || client.status === "end") {
         await client.connect();
+      } else {
+        await waitForReady(client, isClusterClient);
       }
     },
     get: (k) => client.get(k),
@@ -211,9 +252,20 @@ export function createIoredisCluster(
     (IORedis.default as unknown as { Cluster: typeof import("ioredis").Cluster })
       .Cluster;
   return new ClusterCtor(config.nodes, {
+    ...(config.dnsLookup ? { dnsLookup: config.dnsLookup } : {}),
+    ...(config.slotsRefreshTimeout !== undefined
+      ? { slotsRefreshTimeout: config.slotsRefreshTimeout }
+      : {}),
     redisOptions: {
+      username: config.username,
       password: config.password,
-      tls: config.tls ? {} : undefined,
+      tls: config.tls === true ? {} : config.tls || undefined,
+      ...(config.connectTimeout !== undefined
+        ? { connectTimeout: config.connectTimeout }
+        : {}),
+      ...(config.commandTimeout !== undefined
+        ? { commandTimeout: config.commandTimeout }
+        : {}),
     },
     enableReadyCheck: true,
     lazyConnect: true,
